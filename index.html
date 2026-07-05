@@ -185,7 +185,8 @@
             
             <div class="form-group">
                 <label for="aadhar_ac">Aadhar / AC Number</label>
-                <input type="text" id="aadhar_ac" required placeholder="Enter Aadhar or AC Number" onblur="checkExistingUser()">
+                <!-- oninput দিয়ে টাইপ করার সাথে সাথে দ্রুত চেকিং শুরু হবে এবং onblur দিয়ে বাইরে ক্লিক হ্যান্ডেল হবে -->
+                <input type="text" id="aadhar_ac" required placeholder="Enter Aadhar or AC Number" oninput="liveCheckUser()" onblur="finalCheckUser()">
             </div>
 
             <div class="form-group">
@@ -221,16 +222,14 @@
     var timeoutHandler = null;
     var sessionActive = false; 
     var INACTIVITY_LIMIT = 30 * 60 * 1000; 
-    var blurTimeout = null; 
-    
-    // চেকিং রিকোয়েস্ট নিয়ন্ত্রণ করার জন্য ফ্ল্যাগ
+    var liveTimeout = null; 
     var isCheckingActive = false;
+    var lastCheckedValue = "";
 
     function handleLogin() {
         var uId = document.getElementById('username').value.trim();
         var pass = document.getElementById('password').value;
 
-        // আপনার আইডি এবং পাসওয়ার্ড এখানে সঠিকভাবে বসিয়ে দেওয়া হয়েছে
         if (uId === "9366896945" && pass === "Sbi@csp") {
             sessionActive = true;
             showFormBox();
@@ -250,7 +249,7 @@
         sessionActive = false;
         isCheckingActive = false;
         clearTimeout(timeoutHandler);
-        clearTimeout(blurTimeout);
+        clearTimeout(liveTimeout);
         document.getElementById('login-box').classList.remove('hidden');
         document.getElementById('form-box').classList.add('hidden');
         document.getElementById('data-form').reset();
@@ -276,8 +275,40 @@
         }
     }
 
+    // টাইপ করার সাথে সাথেই ব্যাকগ্রাউন্ডে কুয়েরি তৈরি হবে কোনো ল্যাগ ছাড়া
+    function liveCheckUser() {
+        var aadharVal = document.getElementById('aadhar_ac').value.trim();
+        if (aadharVal.length < 4) {
+            removeJsonpScript("jsonp-fetch");
+            return;
+        }
+        
+        clearTimeout(liveTimeout);
+        liveTimeout = setTimeout(function() {
+            if (aadharVal === lastCheckedValue) return;
+            lastCheckedValue = aadharVal;
+            isCheckingActive = true;
+
+            removeJsonpScript("jsonp-fetch");
+            var script = document.createElement("script");
+            script.id = "jsonp-fetch";
+            script.src = SCRIPT_URL + "?action=fetchUser&aadhar_ac=" + encodeURIComponent(aadharVal) + "&callback=onUserDataFetched";
+            document.body.appendChild(script);
+        }, 150); // দ্রুত রেসপন্সের জন্য টাইম কমানো হয়েছে
+    }
+
+    // বাইরে ক্লিক (onblur) করলেই এই ফাংশনটি ফাইনাল স্ট্যাটাস চেক করবে
+    function finalCheckUser() {
+        var aadharVal = document.getElementById('aadhar_ac').value.trim();
+        if (!aadharVal) {
+            var msgDiv = document.getElementById('msg');
+            msgDiv.classList.add('hidden');
+            isCheckingActive = false;
+            removeJsonpScript("jsonp-fetch");
+        }
+    }
+
     window.onUserDataFetched = function(data) {
-        // যদি সাবমিট প্রসেস চালু হয়ে যায়, তবে ব্যাকগ্রাউন্ডের পুরানো চেকিং ডাটা গ্রহণ করা হবে না
         if (!isCheckingActive) {
             removeJsonpScript("jsonp-fetch");
             return;
@@ -289,9 +320,10 @@
             document.getElementById('phone').value = data.user.phone || "";
             msgDiv.className = "message status-correction";
             msgDiv.innerText = "Existing record found! Fields auto-filled.";
+            msgDiv.classList.remove('hidden');
         } else {
-            msgDiv.className = "message status-success";
-            msgDiv.innerText = "New record detected. Please fill details.";
+            // ডাটা না থাকলে সাথে সাথে লোডিং বা চেকিং মেসেজ বন্ধ করে দেওয়া হবে
+            msgDiv.classList.add('hidden');
         }
         isCheckingActive = false;
         removeJsonpScript("jsonp-fetch");
@@ -309,6 +341,7 @@
         submitBtn.innerText = "SUBMIT TO SHEET";
         submitBtn.disabled = false;
         removeJsonpScript("jsonp-submit");
+        lastCheckedValue = ""; 
     };
 
     function removeJsonpScript(id) {
@@ -316,39 +349,15 @@
         if (script) script.parentNode.removeChild(script);
     }
 
-    function checkExistingUser() {
-        clearTimeout(blurTimeout);
-        
-        blurTimeout = setTimeout(function() {
-            var aadharVal = document.getElementById('aadhar_ac').value.trim();
-            if (!aadharVal) return;
-
-            // ব্যাকগ্রাউন্ড চেকিং ট্র্যাকিং অন করা হলো
-            isCheckingActive = true;
-
-            var msgDiv = document.getElementById('msg');
-            msgDiv.className = "message status-loading";
-            msgDiv.innerText = "Checking records securely...";
-            msgDiv.classList.remove('hidden');
-
-            removeJsonpScript("jsonp-fetch");
-
-            var script = document.createElement("script");
-            script.id = "jsonp-fetch";
-            script.src = SCRIPT_URL + "?action=fetchUser&aadhar_ac=" + encodeURIComponent(aadharVal) + "&callback=onUserDataFetched";
-            document.body.appendChild(script);
-        }, 200);
-    }
-
+    // সাবমিট বাটন ক্লিক করার সাথে সাথেই কোনো বিলম্ব ছাড়া ইনস্ট্যান্ট সাবমিট হবে
     function handleSubmit(e) {
         e.preventDefault();
         
-        // সাবমিট করার সাথে সাথেই পূর্ববর্তী চেকিং ইভেন্ট সম্পূর্ণ নিষ্ক্রিয় করা হলো
+        // চেকিংয়ের সমস্ত প্রসেস সাথে সাথে কিল (Kill) করা হলো
         isCheckingActive = false;
-        clearTimeout(blurTimeout);
+        clearTimeout(liveTimeout);
         removeJsonpScript("jsonp-fetch");
         
-        // স্ক্রিনে থাকা "Checking records..." টেক্সট লুকানো হলো
         var msgDiv = document.getElementById('msg');
         msgDiv.classList.add('hidden');
 
