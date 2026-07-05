@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Banking Data Portal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: radial-gradient(circle at top left, #0a192f, #172a45);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e6f1ff;
+        }
+        .container {
+            background: rgba(23, 42, 69, 0.85);
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(100, 255, 218, 0.1);
+            width: 100%;
+            max-width: 480px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .logo-area {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .logo-area svg {
+            width: 50px;
+            height: 50px;
+            fill: #64ffda;
+        }
+        h2 {
+            margin-bottom: 30px;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 600;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #8892b0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0a192f;
+            border: 1px solid #233554;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #e6f1ff;
+            transition: all 0.3s ease;
+        }
+        input:focus {
+            border-color: #64ffda;
+            outline: none;
+            box-shadow: 0 0 8px rgba(100, 255, 218, 0.2);
+        }
+        input::placeholder {
+            color: #495670;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            color: #64ffda;
+            border: 2px solid #64ffda;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(100, 255, 218, 0.1);
+            box-shadow: 0 4px 20px rgba(100, 255, 218, 0.15);
+        }
+        button:disabled {
+            border-color: #233554;
+            color: #495670;
+            cursor: not-allowed;
+            background: transparent;
+            box-shadow: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .status-loading {
+            color: #64ffda;
+            background: rgba(100, 255, 218, 0.05);
+        }
+        .status-success {
+            color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        .status-correction {
+            color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+        #login-error {
+            color: #ff6b6b;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+        .input-row .form-group {
+            flex: 1;
+        }
+        .logout-btn-container {
+            text-align: right;
+            margin-bottom: 15px;
+        }
+        .logout-link {
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. Secure Login Page -->
+    <div id="login-box">
+        <div class="logo-area">
+            <svg viewBox="0 0 24 24">
+                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+            </svg>
+        </div>
+        <h2>Portal Login</h2>
+        <div class="form-group">
+            <label for="username">User ID</label>
+            <input type="text" id="username" placeholder="Enter User ID" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter Password">
+        </div>
+        <button onclick="handleLogin()">LOGIN</button>
+        <p id="login-error"></p>
+    </div>
+
+    <!-- 2. Professional Data Entry Form -->
+    <div id="form-box" class="hidden">
+        <div class="logout-btn-container">
+            <span class="logout-link" onclick="logout()">Logout</span>
+        </div>
+        <h2>Data Entry Portal</h2>
+        <form id="data-form" onsubmit="handleSubmit(event)">
+            
+            <div class="form-group">
+                <label for="aadhar_ac">Aadhar / AC Number</label>
+                <input type="text" id="aadhar_ac" required placeholder="Enter Aadhar or AC Number" onblur="checkExistingUser()">
+            </div>
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" required placeholder="Customer Full Name">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" required placeholder="10-digit Mobile Number">
+            </div>
+
+            <div class="input-row">
+                <div class="form-group">
+                    <label for="deposit">Deposit (₹)</label>
+                    <input type="number" id="deposit" min="0" placeholder="Amount">
+                </div>
+
+                <div class="form-group">
+                    <label for="withdrawal">Withdrawal (₹)</label>
+                    <input type="number" id="withdrawal" min="0" placeholder="Amount">
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">SUBMIT TO SHEET</button>
+        </form>
+        <div id="msg" class="message hidden"></div>
+    </div>
+</div>
+
+<script>
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1sDn691-BoH5AgdktNsV9pxnFsmrAF-iFJOnJjF2uEBc7U5po4H3f3xigQlC65MmQ/exec"; 
+    var timeoutHandler = null;
+    var sessionActive = false; 
+    var INACTIVITY_LIMIT = 30 * 60 * 1000; 
+    var blurTimeout = null; // ইভেন্ট ওভারল্যাপ ক্লিয়ার করার টাইমার
+
+    function handleLogin() {
+        var uId = document.getElementById('username').value.trim();
+        var pass = document.getElementById('password').value;
+
+        if (uId === "9366896945" && pass === "Sbi@csp") {
+            sessionActive = true;
+            showFormBox();
+            startInactivityTimer();
+            document.getElementById('login-error').innerText = "";
+        } else {
+            document.getElementById('login-error').innerText = "Invalid User ID or Password!";
+        }
+    }
+
+    function showFormBox() {
+        document.getElementById('login-box').classList.add('hidden');
+        document.getElementById('form-box').classList.remove('hidden');
+    }
+
+    function logout() {
+        sessionActive = false;
+        clearTimeout(timeoutHandler);
+        clearTimeout(blurTimeout);
+        document.getElementById('login-box').classList.remove('hidden');
+        document.getElementById('form-box').classList.add('hidden');
+        document.getElementById('data-form').reset();
+        document.getElementById('msg').classList.add('hidden');
+        window.onmousemove = null;
+        window.onkeypress = null;
+        window.onscroll = null;
+        window.onclick = null;
+    }
+
+    function startInactivityTimer() {
+        resetTimer();
+        window.onmousemove = resetTimer;
+        window.onkeypress = resetTimer;
+        window.onscroll = resetTimer;
+        window.onclick = resetTimer;
+    }
+
+    function resetTimer() {
+        if (sessionActive) {
+            clearTimeout(timeoutHandler);
+            timeoutHandler = setTimeout(logout, INACTIVITY_LIMIT);
+        }
+    }
+
+    window.onUserDataFetched = function(data) {
+        var msgDiv = document.getElementById('msg');
+        if (data.success && data.user) {
+            document.getElementById('name').value = data.user.name || "";
+            document.getElementById('phone').value = data.user.phone || "";
+            msgDiv.className = "message status-correction";
+            msgDiv.innerText = "Existing record found! Fields auto-filled.";
+        } else {
+            msgDiv.className = "message status-success";
+            msgDiv.innerText = "New record detected. Please fill details.";
+        }
+        removeJsonpScript("jsonp-fetch");
+    };
+
+    window.onDataSubmitted = function(data) {
+        var msgDiv = document.getElementById('msg');
+        var submitBtn = document.getElementById('submit-btn');
+        
+        msgDiv.className = "message status-success";
+        msgDiv.innerText = "Data successfully synchronized with Google Sheets!";
+        msgDiv.classList.remove('hidden');
+        document.getElementById('data-form').reset();
+        
+        submitBtn.innerText = "SUBMIT TO SHEET";
+        submitBtn.disabled = false;
+        removeJsonpScript("jsonp-submit");
+    };
+
+    function removeJsonpScript(id) {
+        var script = document.getElementById(id);
+        if (script) script.parentNode.removeChild(script);
+    }
+
+    // রেকর্ড চেকিং মেথড (ডিলে প্রোটেকশন সহ)
+    function checkExistingUser() {
+        clearTimeout(blurTimeout);
+        
+        // ২০০ মিলিসেকেন্ড ডিলে দেওয়া হয়েছে যাতে সাবমিট বাটনে সরাসরি ক্লিক করলে এটি সাবমিশনকে জ্যাম না করে
+        blurTimeout = setTimeout(function() {
+            var aadharVal = document.getElementById('aadhar_ac').value.trim();
+            if (!aadharVal) return;
+
+            var msgDiv = document.getElementById('msg');
+            msgDiv.className = "message status-loading";
+            msgDiv.innerText = "Checking records securely...";
+            msgDiv.classList.remove('hidden');
+
+            removeJsonpScript("jsonp-fetch");
+
+            var script = document.createElement("script");
+            script.id = "jsonp-fetch";
+            script.src = SCRIPT_URL + "?action=fetchUser&aadhar_ac=" + encodeURIComponent(aadharVal) + "&callback=onUserDataFetched";
+            document.body.appendChild(script);
+        }, 200);
+    }
+
+    // ডেটা সাবমিশন মেথড
+    function handleSubmit(e) {
+        e.preventDefault();
+        
+        // সাবমিট করার সাথে সাথে ব্যাকগ্রাউন্ডের পেন্ডিং চেকিং প্রসেস বন্ধ করে দেওয়া হবে
+        clearTimeout(blurTimeout);
+        removeJsonpScript("jsonp-fetch");
+
+        var submitBtn = document.getElementById('submit-btn');
+        var msgDiv = document.getElementById('msg');
+        
+        submitBtn.innerText = "SYNCHRONIZING...";
+        submitBtn.disabled = true;
+
+        removeJsonpScript("jsonp-submit");
+
+        var nameVal = document.getElementById('name').value;
+        var aadharVal = document.getElementById('aadhar_ac').value;
+        var phoneVal = document.getElementById('phone').value;
+        var depositVal = document.getElementById('deposit').value || "0"; 
+        var withdrawalVal = document.getElementById('withdrawal').value || "0"; 
+
+        var uploadUrl = SCRIPT_URL + 
+            "?action=submitForm" +
+            "&name=" + encodeURIComponent(nameVal) +
+            "&aadhar_ac=" + encodeURIComponent(aadharVal) +
+            "&phone=" + encodeURIComponent(phoneVal) +
+            "&deposit=" + encodeURIComponent(depositVal) +
+            "&withdrawal=" + encodeURIComponent(withdrawalVal) +
+            "&callback=onDataSubmitted";
+
+        var script = document.createElement("script");
+        script.id = "jsonp-submit";
+        script.src = uploadUrl;
+        document.body.appendChild(script);
+    }
+</script>
+
+</body>
+</html>
