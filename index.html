@@ -221,12 +221,16 @@
     var timeoutHandler = null;
     var sessionActive = false; 
     var INACTIVITY_LIMIT = 30 * 60 * 1000; 
-    var blurTimeout = null; // ইভেন্ট ওভারল্যাপ ক্লিয়ার করার টাইমার
+    var blurTimeout = null; 
+    
+    // চেকিং রিকোয়েস্ট নিয়ন্ত্রণ করার জন্য ফ্ল্যাগ
+    var isCheckingActive = false;
 
     function handleLogin() {
         var uId = document.getElementById('username').value.trim();
         var pass = document.getElementById('password').value;
 
+        // আপনার আইডি এবং পাসওয়ার্ড এখানে সঠিকভাবে বসিয়ে দেওয়া হয়েছে
         if (uId === "9366896945" && pass === "Sbi@csp") {
             sessionActive = true;
             showFormBox();
@@ -244,6 +248,7 @@
 
     function logout() {
         sessionActive = false;
+        isCheckingActive = false;
         clearTimeout(timeoutHandler);
         clearTimeout(blurTimeout);
         document.getElementById('login-box').classList.remove('hidden');
@@ -272,6 +277,12 @@
     }
 
     window.onUserDataFetched = function(data) {
+        // যদি সাবমিট প্রসেস চালু হয়ে যায়, তবে ব্যাকগ্রাউন্ডের পুরানো চেকিং ডাটা গ্রহণ করা হবে না
+        if (!isCheckingActive) {
+            removeJsonpScript("jsonp-fetch");
+            return;
+        }
+
         var msgDiv = document.getElementById('msg');
         if (data.success && data.user) {
             document.getElementById('name').value = data.user.name || "";
@@ -282,6 +293,7 @@
             msgDiv.className = "message status-success";
             msgDiv.innerText = "New record detected. Please fill details.";
         }
+        isCheckingActive = false;
         removeJsonpScript("jsonp-fetch");
     };
 
@@ -304,14 +316,15 @@
         if (script) script.parentNode.removeChild(script);
     }
 
-    // রেকর্ড চেকিং মেথড (ডিলে প্রোটেকশন সহ)
     function checkExistingUser() {
         clearTimeout(blurTimeout);
         
-        // ২০০ মিলিসেকেন্ড ডিলে দেওয়া হয়েছে যাতে সাবমিট বাটনে সরাসরি ক্লিক করলে এটি সাবমিশনকে জ্যাম না করে
         blurTimeout = setTimeout(function() {
             var aadharVal = document.getElementById('aadhar_ac').value.trim();
             if (!aadharVal) return;
+
+            // ব্যাকগ্রাউন্ড চেকিং ট্র্যাকিং অন করা হলো
+            isCheckingActive = true;
 
             var msgDiv = document.getElementById('msg');
             msgDiv.className = "message status-loading";
@@ -327,17 +340,19 @@
         }, 200);
     }
 
-    // ডেটা সাবমিশন মেথড
     function handleSubmit(e) {
         e.preventDefault();
         
-        // সাবমিট করার সাথে সাথে ব্যাকগ্রাউন্ডের পেন্ডিং চেকিং প্রসেস বন্ধ করে দেওয়া হবে
+        // সাবমিট করার সাথে সাথেই পূর্ববর্তী চেকিং ইভেন্ট সম্পূর্ণ নিষ্ক্রিয় করা হলো
+        isCheckingActive = false;
         clearTimeout(blurTimeout);
         removeJsonpScript("jsonp-fetch");
+        
+        // স্ক্রিনে থাকা "Checking records..." টেক্সট লুকানো হলো
+        var msgDiv = document.getElementById('msg');
+        msgDiv.classList.add('hidden');
 
         var submitBtn = document.getElementById('submit-btn');
-        var msgDiv = document.getElementById('msg');
-        
         submitBtn.innerText = "SYNCHRONIZING...";
         submitBtn.disabled = true;
 
